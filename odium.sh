@@ -54,53 +54,63 @@ empty_input(){
 }
 
 default_local_port(){
-   printf "\n[i] Current default local port = $iface\n"
+   printf "\n[i] Current default local port = $local_port\n"
     read -p "[*] New value: " input
     empty_input
     sed -i "s/local_port\=.*/local_port=$input/" $settings_file
     source $settings_file
-    edit_set
+    settings
 }
 
 default_app_name(){
-   printf "\n[i] Current default app name = $iface\n"
+   printf "\n[i] Current default app name = $appname\n"
     read -p "[*] New value: " input
     empty_input
     sed -i "s/appname\=.*/appname=$input/" $settings_file
     source $settings_file
-    edit_set
+    settings
 }
 
 default_app_template(){
-   printf "\n[i] Current default app template = $iface\n"
+   printf "\n[i] Current default app template = $template\n"
     read -p "[*] New value: " input
     empty_input
     sed -i "s/template\=.*/template=$input/" $settings_file
     source $settings_file
-    edit_set
+    settings
 }
 
-default_local_port(){
-   printf "\n[i] Current default exe name = $iface\n"
+default_exe_name(){
+   printf "\n[i] Current default exe name = $exename\n"
     read -p "[*] New value: " input
     empty_input
     sed -i "s/exename\=.*/exename=$input/" $settings_file
     source $settings_file
-    edit_set
+    settings
 }
 
-default_local_port(){
-   printf "\n[i] Current default local port = $iface\n"
+default_exe_template(){
+   printf "\n[i] Current default exe template = $exetemplate\n"
     read -p "[*] New value: " input
     empty_input
-    sed -i "s/local_port\=.*/local_port=$input/" $settings_file
+    sed -i "s/exetemplate\=.*/exetemplate=$input/" $settings_file
     source $settings_file
-    edit_set
+    settings
 }
 
 settings(){
 banner
-printf "Select setting to edit"
+printf '| Odium - Remote exploitation tool |
+
+'
+printf "Select setting to edit:\n
+[1] Local port
+[2] App name
+[3] App template
+[4] Exe name
+[5] Exe template
+[*] Back\n
+"
 read -p "[?] Choice: " sel
 case $sel in
 1) default_local_port;;
