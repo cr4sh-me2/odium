@@ -12,7 +12,7 @@
 
 - Hide some commands output ✔️
 
-#####
+
 
 - Optimize commands options
 
