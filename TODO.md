@@ -12,6 +12,9 @@
 
 - Hide some commands output ✔️
 
+- Add easy to use installer ✔️
+
+---
 
 
 - Optimize commands options
