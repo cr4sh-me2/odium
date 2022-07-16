@@ -6,7 +6,10 @@
 
 ####
 
-ngrok_pid=$(pgrep ngrok)
+command -v jq > /dev/null 2>&1 || { echo >&2 "[!] JQ not found. Install it. Aborting."; 
+exit 1; }
+
+# ngrok_pid=$(pgrep ngrok)
 config_file="config/metasploit_string.rc"
 settings_file="config/settings.conf"
 source $settings_file
@@ -21,10 +24,10 @@ banner(){
 
 stop_ngrok(){
 
-   printf "[*] Stopping ngrok (kill -9 $ngrok_pid) in 5s...\n"
+   printf "[*] Stopping ngrok (kill -9 $(pgrep ngrok)) in 5s...\n"
    sleep 5
    #  kill -9 $(ps -ef | grep 'ngrok' | grep -v 'grep' | awk '{print $2}')
-   kill -9 $ngrok_pid
+   kill -9 $(pgrep ngrok)
    printf "[i] Done!\n"
 
 }
@@ -33,7 +36,7 @@ start_ngrok(){
 
 #CHECK AND KILL NGROK IF ITS ALREADY RUNNING
 
-if [ -z $ngrok_pid ]; then
+if [ -z $(pgrep ngrok) ]; then
     echo "[i] Ngrok is not running!"
 else
     echo "[!] Ngrok is already running, killing it!"
@@ -43,7 +46,8 @@ fi
 
 # START NGROK & EXCLUDE URL AND PORT TO VARIABLE
 printf "[*] Starting ngrok at port: $local_port...\n"
-ngrok tcp $local_port > /dev/null &
+# ngrok tcp $local_port > /dev/null &
+nohup ngrok tcp $local_port &>/dev/null &
 while ! nc -z localhost 4040; do
   printf "[*] Waiting for ngrok url...\n"
   sleep 1.5 
@@ -102,23 +106,23 @@ default_app_template(){
     settings
 }
 
-default_exe_name(){
-   printf "\n[i] Current default exe name = $exename\n"
-    read -p "[*] New value: " input
-    empty_input
-    sed -i "s/exename\=.*/exename=$input/" $settings_file
-    source $settings_file
-    settings
-}
+# default_exe_name(){
+#    printf "\n[i] Current default exe name = $exename\n"
+#     read -p "[*] New value: " input
+#     empty_input
+#     sed -i "s/exename\=.*/exename=$input/" $settings_file
+#     source $settings_file
+#     settings
+# }
 
-default_exe_template(){
-   printf "\n[i] Current default exe template = $exetemplate\n"
-    read -p "[*] New value: " input
-    empty_input
-    sed -i "s!exetemplate\=.*!exetemplate=$input!" $settings_file
-    source $settings_file
-    settings
-}
+# default_exe_template(){
+#    printf "\n[i] Current default exe template = $exetemplate\n"
+#     read -p "[*] New value: " input
+#     empty_input
+#     sed -i "s!exetemplate\=.*!exetemplate=$input!" $settings_file
+#     source $settings_file
+#     settings
+# }
 
 settings(){
 banner
@@ -129,8 +133,6 @@ printf "Select setting to edit:\n
 [1] Local port
 [2] App name
 [3] App template
-[4] Exe name
-[5] Exe template
 [*] Back\n
 "
 read -p "[?] Choice: " sel
@@ -138,8 +140,8 @@ case $sel in
 1) default_local_port;;
 2) default_app_name;;
 3) default_app_template;;
-4) default_exe_name;;
-5) default_exe_template;;
+# 4) default_exe_name;;
+# 5) default_exe_template;;
 *) menu ;;
 esac
 }
@@ -179,10 +181,9 @@ printf '| Odium - Remote exploitation tool |
 
 '
 
-printf "Select payload platform:\n
+printf "Select option:\n
 [1] Android
-[2] Windows
-[3] Settings
+[2] Settings
 [*] Exit
 
 "
@@ -192,8 +193,6 @@ case $platform in
 1)
    start_android;;
 2) 
-   start_windows;;
-3)
    settings;;
 *) 
    exit;;
